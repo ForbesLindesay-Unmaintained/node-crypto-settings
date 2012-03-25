@@ -31,9 +31,9 @@ function load(password, optionsOrCallback, callback){
     }
     if(isAsync){
         options.read = options.read || function (callback){
-            require('path').exists('settings.json', function(exists){
+            require('path').exists('settings.dat', function(exists){
                 if(exists){
-                    fs.readFile('settings.json', 'utf8', function (err, data){
+                    fs.readFile('settings.dat', 'utf8', function (err, data){
                         if(err) throw err;
                         callback(data);
                     });
@@ -43,67 +43,43 @@ function load(password, optionsOrCallback, callback){
             });
         };
         options.write = options.write || function (data, callback){
-            fs.writeFile('settings.json', data, 'utf8', callback); 
+            fs.writeFile('settings.dat', data, 'utf8', callback); 
         };
         options.read(function (data){
             var settings = decode(data);
             settings.save = function (callback){
+            	if(!callback){
+            		console.log("saving...");
+            		callback = function(err){if(err)throw err;else console.log("saved");};
+            	}
                 options.write(encode(this), callback);
             };
+            settings.useConsole = function(){ 
+            	require("repl").start("> ").context.settings = this;
+ 			};
+
             callback(settings);
         });
     }else{
         options.readSync = options.readSync || function (){
-            if(require('path').existsSync('settings.json'))
-                return fs.readFileSync('settings.json', 'utf8');
+            if(require('path').existsSync('settings.dat'))
+                return fs.readFileSync('settings.dat', 'utf8');
             else
                 return false;
         };
         options.writeSync = options.writeSync || function (data){ 
-            fs.writeFileSync('settings.json', data, 'utf8'); 
+            fs.writeFileSync('settings.dat', data, 'utf8'); 
         };
         return (function(){
             var settings = decode(options.readSync());
-            settings.save = function(){options.writeSync(encode(this));};
+            settings.save = function(){ 
+            	return options.writeSync(encode(this));
+            	};
+            settings.useConsole = function(){ 
+            	require("repl").start("> ").context.settings = this;
+ 			};
             return settings;
         }());
     }
 }
-require("repl").start();
-
-
-function parse(prop){
-    var arg = process.argv;
-    for (var i = 0; i<arg.length; i++){
-        if(arg[i] === prop) return arg[i+1];
-    }
-}
-var key = parse("-key"),
-    prop = parse("-prop"),
-    val = parse("-val");
-    
-function cryptoSettings(readSync, writeSync){    
-    var settings = {};
-    try{
-        settings = JSON.parse(readSync());
-        if(settings.encrypted){
-            settings = JSON.parse(decrypt(settings.data, key));
-        }
-    }catch(ex){
-        console.log("settings file is corrupt, delete it to recover");
-    }
-    
-    if(prop && val){
-        console.log("Changed " + prop + " from " + settings[prop] + " to " + val);
-        settings[prop] = val;
-        if(key){
-            var enc = {encrypted:true, data:encrypt(JSON.stringify(settings), key)};
-            writeSync(JSON.stringify(enc));
-        }else{
-            writeSync(JSON.stringify(settings));
-        }
-    } else if (prop){
-        console.log(prop + " is set to " + settings[prop]);
-    }
-    return settings;
-}
+require("repl").start("> ").context.load = load;
