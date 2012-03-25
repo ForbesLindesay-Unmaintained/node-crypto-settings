@@ -1,18 +1,56 @@
 var fs = require("fs"),
     crypto = require("crypto");
-function load(password, optionsOrCallback, callback){
+
+function parse(prop){
+	var arg = process.argv;
+	for (var i = 0; i<arg.length; i++){
+        if(arg[i] === prop) return arg[i+1];
+    }
+}
+function exists(prop){
+	var arg = process.argv;
+	for (var i = 0; i<arg.length; i++){
+        if(arg[i] === prop) return true;
+    }
+    return false;
+}
+function useConsole(isAsync, settings){
+	return function(callback){
+		var repl = require("repl").start();
+		repl.context.settings = settings;
+		repl.rli.on('close', function(){
+			if(!isAsync){
+				settings.save();
+				if(callback) callback();
+				else console.log("saved");
+			} else {
+				settings.save(function(err){
+					if(err) throw err;
+					if(callback) callback();
+					else console.log("saved");
+				});
+			}
+		});
+	};
+}
+module.exports = function (password, optionsOrCallback, callback){
     var options = {},
         isAsync = false;
-    if(typeof optionsOrCallback === "function"){
-        callback = optionsOrCallback;
-    }else if(optionsOrCallback){
-        options = optionsOrCallback;
+    if(arguments.length === 0){
+    	password = parse("-pass") || "";
+    	options.useConsole = exists("-edit");
+    }else{
+        if(typeof optionsOrCallback === "function"){
+        	callback = optionsOrCallback;
+        }else if(optionsOrCallback){
+        	options = optionsOrCallback;
+        }
+        if(typeof callback === "function"){
+        	isAsync = true;
+        }
+        options = options || {};
+        password = password || "";
     }
-    if(typeof callback === "function"){
-        isAsync = true;
-    }
-    options = options || {};
-    password = password || "";
     function decode(data){
         if(data){
             var decipher = crypto.createDecipher("aes256", password);
@@ -54,9 +92,11 @@ function load(password, optionsOrCallback, callback){
                 }
                 options.write(encode(this), callback);
             };
-            settings.useConsole = function(){ 
-                require("repl").start("> ").context.settings = this;
-            };
+            if(options.useConsole){
+            	useConsole(isAsync, settings)();
+            }else{
+                settings.useConsole = useConsole(isAsync, settings);
+            }
             callback(settings);
         });
     }else{
@@ -74,14 +114,12 @@ function load(password, optionsOrCallback, callback){
             settings.save = function(){ 
                 return options.writeSync(encode(this));
             };
-            settings.useConsole = function(){ 
-                require("repl").start("> ").context.settings = this;
-            };
+            if(options.useConsole){
+            	useConsole(isAsync, settings)();
+            }else{
+                settings.useConsole = useConsole(isAsync, settings);
+            }
             return settings;
         }());
     }
 }
-load("password", function(settings){
-    console.log(settings);
-});
-//require("repl").start("> ").context.load = load;
