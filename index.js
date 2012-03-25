@@ -33,24 +33,24 @@ function useConsole(isAsync, settings){
 		});
 	};
 }
-module.exports = function (password, optionsOrCallback, callback){
+module.exports = function (optionsOrCallback, callback){
     var options = {},
         isAsync = false;
-    if(arguments.length === 0){
-    	password = parse("-pass") || "";
-    	options.useConsole = exists("-edit");
-    }else{
-        if(typeof optionsOrCallback === "function"){
-        	callback = optionsOrCallback;
-        }else if(optionsOrCallback){
-        	options = optionsOrCallback;
-        }
-        if(typeof callback === "function"){
-        	isAsync = true;
-        }
-        options = options || {};
-        password = password || "";
+    if(typeof optionsOrCallback === "function"){
+        callback = optionsOrCallback;
+    }else if(optionsOrCallback){
+        options = optionsOrCallback;
     }
+    if(typeof callback === "function"){
+        isAsync = true;
+    }
+    options = options || {};
+    options.password = options.password || parse("-pass") || "";
+    options.useConsole = options.useConsole || exists("-edit");
+    options.print = options.print || exists("-print");
+    
+    var password = options.password;
+    
     function decode(data){
         if(data){
             var decipher = crypto.createDecipher("aes256", password);
@@ -92,8 +92,13 @@ module.exports = function (password, optionsOrCallback, callback){
                 }
                 options.write(encode(this), callback);
             };
+            if(options.print) {
+                console.log("settings");
+                console.log("========");
+                console.log(settings);
+            }
             if(options.useConsole){
-            	useConsole(isAsync, settings)();
+                useConsole(isAsync, settings)();
             }else{
                 settings.useConsole = useConsole(isAsync, settings);
             }
@@ -111,15 +116,20 @@ module.exports = function (password, optionsOrCallback, callback){
         };
         return (function(){
             var settings = decode(options.readSync());
+            if(options.print) {
+                console.log("settings");
+                console.log("========");
+                console.log(settings);
+            }
             settings.save = function(){ 
                 return options.writeSync(encode(this));
             };
             if(options.useConsole){
-            	useConsole(isAsync, settings)();
+                useConsole(isAsync, settings)();
             }else{
                 settings.useConsole = useConsole(isAsync, settings);
             }
             return settings;
         }());
     }
-}
+};
