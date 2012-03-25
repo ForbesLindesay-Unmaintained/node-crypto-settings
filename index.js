@@ -48,16 +48,15 @@ function load(password, optionsOrCallback, callback){
         options.read(function (data){
             var settings = decode(data);
             settings.save = function (callback){
-            	if(!callback){
-            		console.log("saving...");
-            		callback = function(err){if(err)throw err;else console.log("saved");};
-            	}
+                if(!callback){
+                    console.log("saving...");
+                    callback = function(err){if(err)throw err;else console.log("saved");};
+                }
                 options.write(encode(this), callback);
             };
             settings.useConsole = function(){ 
-            	require("repl").start("> ").context.settings = this;
- 			};
-
+                require("repl").start("> ").context.settings = this;
+            };
             callback(settings);
         });
     }else{
@@ -73,13 +72,16 @@ function load(password, optionsOrCallback, callback){
         return (function(){
             var settings = decode(options.readSync());
             settings.save = function(){ 
-            	return options.writeSync(encode(this));
-            	};
+                return options.writeSync(encode(this));
+            };
             settings.useConsole = function(){ 
-            	require("repl").start("> ").context.settings = this;
- 			};
+                require("repl").start("> ").context.settings = this;
+            };
             return settings;
         }());
     }
 }
-require("repl").start("> ").context.load = load;
+load("password", function(settings){
+    console.log(settings);
+});
+//require("repl").start("> ").context.load = load;
