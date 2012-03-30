@@ -98,11 +98,14 @@ module.exports = function (optionsOrCallback, callback){
                 console.log(settings);
             }
             if(options.useConsole){
-                useConsole(isAsync, settings)();
+                useConsole(isAsync, settings)(function(){
+                	settings.useConsole = useConsole(isAsync, settings);
+                	callback(settings);
+                });
             }else{
                 settings.useConsole = useConsole(isAsync, settings);
+                callback(settings);
             }
-            callback(settings);
         });
     }else{
         options.readSync = options.readSync || function (){
