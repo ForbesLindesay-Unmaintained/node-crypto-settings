@@ -1,5 +1,7 @@
 {
-    "name":"crypto-settings",
-    "version":"0.0.1",
-    "main":"./index"
+  "name": "crypto-settings",
+  "version": "0.0.1",
+  "main": "./index",
+  "author": "ForbesLindesay",
+  "license": "MIT"
 }
