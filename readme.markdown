@@ -3,6 +3,8 @@ intended usage is very simple:
 
 # Installation
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/ForbesLindesay/node-crypto-settings.svg)](https://greenkeeper.io/)
+
     npm install crypto-settings
 
 # Basic Usage
